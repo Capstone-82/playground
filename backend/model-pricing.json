@@ -1,0 +1,166 @@
+{
+  "claude-opus-4-6": {
+    "input_cost": 5.0,
+    "output_cost": 25.0,
+    "tokens": 1000000
+  },
+  "claude-sonnet-4-5": {
+    "input_cost": 3.0,
+    "output_cost": 15.0,
+    "tokens": 1000000
+  },
+  "claude-haiku-4-5": {
+    "input_cost": 1.0,
+    "output_cost": 5.0,
+    "tokens": 1000000
+  },
+
+  "gemini-2.5-pro": {
+    "input_cost": 1.25,
+    "output_cost": 10.0,
+    "tokens": 1000000
+  },
+  "gemini-2.5-flash": {
+    "input_cost": 0.3,
+    "output_cost": 2.5,
+    "tokens": 1000000
+  },
+  "gemini-2.5-flash-lite": {
+    "input_cost": 0.1,
+    "output_cost": 0.4,
+    "tokens": 1000000
+  },
+  "gemini-3-pro-preview": {
+    "input_cost": 2.0,
+    "output_cost": 12.0,
+    "tokens": 1000000
+  },
+
+  "gpt-5.2": {
+    "input_cost": 1.75,
+    "output_cost": 14.0,
+    "tokens": 1000000
+  },
+  "gpt-4.1": {
+    "input_cost": 2.0,
+    "output_cost": 8.0,
+    "tokens": 1000000
+  },
+  "gpt-4.1-mini": {
+    "input_cost": 0.4,
+    "output_cost": 1.6,
+    "tokens": 1000000
+  },
+  "gpt-4o": {
+    "input_cost": 2.5,
+    "output_cost": 10.0,
+    "tokens": 1000000
+  },
+
+  "meta-llama/llama-3.3-70b-instruct": {
+    "input_cost": 0.1,
+    "output_cost": 0.32,
+    "tokens": 1000000
+  },
+  "meta-llama/llama-3.1-70b-instruct": {
+    "input_cost": 0.4,
+    "output_cost": 0.4,
+    "tokens": 1000000
+  },
+  "meta-llama/llama-3.1-8b-instruct": {
+    "input_cost": 0.02,
+    "output_cost": 0.05,
+    "tokens": 1000000
+  },
+  "meta-llama/llama-3.2-90b-vision-instruct": {
+    "input_cost": null,
+    "output_cost": null,
+    "tokens": 1000000
+  },
+
+  "amazon.nova-premier-v1:0": {
+    "input_cost": 2.5,
+    "output_cost": 12.5,
+    "tokens": 1000000
+  },
+  "amazon.nova-pro-v1:0": {
+    "input_cost": 0.8,
+    "output_cost": 3.2,
+    "tokens": 1000000
+  },
+  "amazon.nova-lite-v1:0": {
+    "input_cost": 0.06,
+    "output_cost": 0.24,
+    "tokens": 1000000
+  },
+  "amazon.titan-text-premier-v1:0": {
+    "input_cost": 0.5,
+    "output_cost": 1.5,
+    "tokens": 1000000
+  },
+
+  "mistral-large-2411": {
+    "input_cost": 2.0,
+    "output_cost": 6.0,
+    "tokens": 1000000
+  },
+  "mistral-medium-3": {
+    "input_cost": 0.4,
+    "output_cost": 2.0,
+    "tokens": 1000000
+  },
+  "mistral-small-2503": {
+    "input_cost": 0.1,
+    "output_cost": 0.3,
+    "tokens": 1000000
+  },
+  "pixtral-large-2411": {
+    "input_cost": 2.0,
+    "output_cost": 6.0,
+    "tokens": 1000000
+  },
+
+  "deepseek-ai/deepseek-v3.2-maas": {
+    "input_cost": 0.56,
+    "output_cost": 1.68,
+    "tokens": 1000000
+  },
+  "deepseek-ai/deepseek-r1-0528-maas": {
+    "input_cost": 2.19,
+    "output_cost": 8.0,
+    "tokens": 1000000
+  },
+
+  "meta/llama-3.3-70b-instruct-maas": {
+    "input_cost": 0.1,
+    "output_cost": 0.32,
+    "tokens": 1000000
+  },
+  "meta/llama-4-scout-17b-16e-instruct-maas": {
+    "input_cost": 0.15,
+    "output_cost": 0.60,
+    "tokens": 1000000
+  },
+
+  "mistral.mistral-small-2402-v1:0": {
+    "input_cost": 0.1,
+    "output_cost": 0.3,
+    "tokens": 1000000
+  },
+  "mistral.mistral-large-2402-v1:0": {
+    "input_cost": 2.0,
+    "output_cost": 6.0,
+    "tokens": 1000000
+  },
+  "us.mistral.pixtral-large-2502-v1:0": {
+    "input_cost": 2.0,
+    "output_cost": 6.0,
+    "tokens": 1000000
+  },
+
+  "gpt-4o-mini": {
+    "input_cost": 0.15,
+    "output_cost": 0.6,
+    "tokens": 1000000
+  }
+}

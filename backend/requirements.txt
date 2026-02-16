@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+google-cloud-aiplatform
+google-genai
+anthropic[vertex]
+openai
+google-auth
+supabase
+python-dotenv
+pydantic
+pydantic-settings
+httpx
+boto3
+
