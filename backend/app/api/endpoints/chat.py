@@ -1,10 +1,12 @@
+import json
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
-from typing import Optional
+from typing import Optional, List
 from app.models.schemas import ChatRequest, ChatResponse
-from app.core.model_matrix import get_model_id
+from app.core.model_matrix import get_model_id, recommend_model, CAPABILITY_KEYS
 from app.services.ai_service import ai_service
 from app.services.pricing_service import PricingService
 from app.services.supabase_service import supabase_service
+from app.api.endpoints.tagging import WORKLOAD_CLASSIFIER_PROMPT
 
 router = APIRouter()
 
@@ -13,7 +15,10 @@ router = APIRouter()
 async def chat(request: ChatRequest):
     """
     Unified chat endpoint (text-only).
+    Supports auto_select mode for intelligent model routing.
     """
+    if request.auto_select:
+        return await _process_chat_auto(prompt=request.prompt)
     return await _process_chat(
         provider=request.provider,
         use_case=request.use_case,
@@ -108,3 +113,78 @@ async def _process_chat(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Model invocation failed: {str(e)}")
+
+
+async def _classify_prompt(prompt: str) -> List[str]:
+    """Classify prompt into workload tags using a fast model."""
+    try:
+        result = await ai_service.generate(
+            provider="Google",
+            model_id="gemini-2.5-flash",
+            prompt=f"{WORKLOAD_CLASSIFIER_PROMPT}\n\nUser Prompt:\n{prompt}",
+        )
+        text = result["text"].strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+        parsed = json.loads(text)
+        tags = [t for t in parsed.get("tags", []) if t in CAPABILITY_KEYS]
+        return tags if tags else ["reasoning"]
+    except Exception:
+        return ["reasoning"]
+
+
+async def _process_chat_auto(prompt: str) -> ChatResponse:
+    """Auto-select the best model based on workload tags, then execute."""
+    try:
+        # Step 1: Classify the prompt
+        tags = await _classify_prompt(prompt)
+
+        # Step 2: Recommend model
+        best = recommend_model(tags)
+        if not best:
+            raise ValueError(f"No model found for tags: {tags}")
+
+        provider = best["provider"]
+        model_id = best["model_id"]
+
+        # Step 3: Execute
+        result = await ai_service.generate(provider, model_id, prompt)
+
+        # Step 4: Cost
+        cost = PricingService.calculate_cost(
+            model_id, result["input_tokens"], result["output_tokens"]
+        )
+
+        # Step 5: Telemetry
+        try:
+            supabase_service.log_telemetry({
+                "provider": provider,
+                "model_id": model_id,
+                "use_case": ",".join(tags),
+                "prompt": prompt,
+                "response": result["text"],
+                "input_tokens": result["input_tokens"],
+                "output_tokens": result["output_tokens"],
+                "cost": cost,
+                "latency_ms": result["latency_ms"],
+            })
+        except Exception as e:
+            print(f"Warning: Failed to log telemetry: {e}")
+
+        return ChatResponse(
+            response=result["text"],
+            provider=provider,
+            model_id=model_id,
+            use_case=",".join(tags),
+            metrics={
+                "input_tokens": result["input_tokens"],
+                "output_tokens": result["output_tokens"],
+                "cost": cost,
+                "latency_ms": result["latency_ms"],
+            },
+            workload_tags=tags,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Auto-select failed: {str(e)}")
