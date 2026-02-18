@@ -20,7 +20,7 @@ class AIService:
     """Unified AI service that routes requests to the correct provider SDK."""
 
     def __init__(self):
-        # Google Gemini client (Vertex AI + API Key)
+        # Google Gemini client via Vertex AI
         self._vertex_genai_client = genai.Client(
             vertexai=True,
             api_key=settings.GOOGLE_API_KEY,
@@ -95,26 +95,40 @@ class AIService:
         return result
 
     def _call_gemini(self, model_id: str, prompt: str, image_bytes: bytes = None, mime_type: str = None) -> dict:
-        """Call Google Gemini via Vertex AI genai SDK. Supports vision with image bytes."""
-        contents = []
+        """Call Google Gemini via standard AI SDK (Original Implementation)."""
+        try:
+            if image_bytes and mime_type:
+                # Vision: pass raw bytes and mime type directly
+                contents = [
+                    genai_types.Content(
+                        role="user",
+                        parts=[
+                            genai_types.Part.from_text(text=prompt),
+                            genai_types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                        ],
+                    )
+                ]
+            else:
+                contents = prompt
 
-        if image_bytes and mime_type:
-            # Build multimodal content: image + text
-            image_part = genai_types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
-            contents = [image_part, prompt]
-        else:
-            contents = prompt
-
-        response = self._vertex_genai_client.models.generate_content(
-            model=model_id,
-            contents=contents,
-        )
-        usage = response.usage_metadata
-        return {
-            "text": response.text,
-            "input_tokens": usage.prompt_token_count or 0,
-            "output_tokens": usage.candidates_token_count or 0,
-        }
+            response = self._vertex_genai_client.models.generate_content(
+                model=model_id,
+                contents=contents,
+                config=genai_types.GenerateContentConfig(
+                    max_output_tokens=1024,
+                    temperature=0.7,
+                ),
+            )
+            
+            # Simple token extraction (approximated for SDK consistency)
+            return {
+                "text": response.text,
+                "input_tokens": getattr(response.usage_metadata, "prompt_token_count", 0),
+                "output_tokens": getattr(response.usage_metadata, "candidates_token_count", 0),
+            }
+        except Exception as e:
+            print(f"ERROR: Google Gemini SDK call failed: {str(e)}")
+            raise ValueError(f"Google Gemini SDK error: {str(e)}")
 
     def _call_openai(self, model_id: str, prompt: str, image_bytes: bytes = None, mime_type: str = None) -> dict:
         """Call OpenAI directly. Supports vision with base64 image."""

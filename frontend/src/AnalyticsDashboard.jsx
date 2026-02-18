@@ -143,7 +143,7 @@ function AnalyticsDashboard({ onBack }) {
       <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col p-5 shrink-0">
         <button
           onClick={onBack}
-          className="text-xs text-slate-400 hover:text-white mb-6 flex items-center gap-2 transition-all group"
+          className="text-sm text-slate-400 hover:text-white mb-6 flex items-center gap-2 transition-all group"
         >
           <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" /> Back to Chat
         </button>
@@ -182,7 +182,7 @@ function AnalyticsDashboard({ onBack }) {
           })}
         </nav>
 
-        <div className="mt-auto pt-6 text-[10px] text-slate-600 font-bold uppercase tracking-widest text-center">
+        <div className="mt-auto pt-6 text-xs text-slate-600 font-bold uppercase tracking-widest text-center">
           AI Governance Analytics
         </div>
       </aside>
@@ -217,10 +217,10 @@ function SummaryCard({ label, value, color, icon: Icon }) {
   };
   return (
     <div className={`border ${colors[color]} bg-slate-800/50 rounded-lg p-3`}>
-      <p className="text-[9px] font-bold uppercase text-slate-500 tracking-widest flex items-center gap-1.5">
-        {Icon && <Icon size={12} />} {label}
+      <p className="text-xs font-bold uppercase text-slate-500 tracking-widest flex items-center gap-1.5">
+        {Icon && <Icon size={14} />} {label}
       </p>
-      <p className="text-lg font-bold font-mono mt-1">{value}</p>
+      <p className="text-xl font-bold font-mono mt-1">{value}</p>
     </div>
   );
 }
@@ -229,7 +229,7 @@ function SummaryCard({ label, value, color, icon: Icon }) {
 function ChartCard({ title, children, className = '' }) {
   return (
     <div className={`bg-slate-900/80 border border-slate-800 rounded-2xl p-5 ${className}`}>
-      <h3 className="text-xs font-bold uppercase text-slate-500 tracking-widest mb-4">{title}</h3>
+      <h3 className="text-sm font-bold uppercase text-slate-500 tracking-widest mb-4">{title}</h3>
       {children}
     </div>
   );
@@ -247,8 +247,8 @@ function OverviewTab({ providerData, costPieData, timelineData, radarData }) {
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={providerData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-              <XAxis dataKey="provider" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
+              <XAxis dataKey="provider" tick={{ fill: '#94a3b8', fontSize: 13 }} />
+              <YAxis tick={{ fill: '#94a3b8', fontSize: 13 }} />
               <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }} labelStyle={{ color: '#f1f5f9' }} itemStyle={{ color: '#e2e8f0' }} />
               <Bar dataKey="cost" radius={[6, 6, 0, 0]}>
                 {providerData.map((entry, i) => (
@@ -282,8 +282,8 @@ function OverviewTab({ providerData, costPieData, timelineData, radarData }) {
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={providerData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-              <XAxis dataKey="provider" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
+              <XAxis dataKey="provider" tick={{ fill: '#94a3b8', fontSize: 13 }} />
+              <YAxis tick={{ fill: '#94a3b8', fontSize: 13 }} />
               <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }} labelStyle={{ color: '#f1f5f9' }} itemStyle={{ color: '#e2e8f0' }} />
               <Bar dataKey="avg_latency" radius={[6, 6, 0, 0]}>
                 {providerData.map((entry, i) => (
@@ -299,7 +299,7 @@ function OverviewTab({ providerData, costPieData, timelineData, radarData }) {
           <ResponsiveContainer width="100%" height={280}>
             <AreaChart data={timelineData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-              <XAxis dataKey="index" tick={{ fill: '#94a3b8', fontSize: 11 }} />
+              <XAxis dataKey="index" tick={{ fill: '#94a3b8', fontSize: 13 }} />
               <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
               <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }} labelStyle={{ color: '#f1f5f9' }} itemStyle={{ color: '#e2e8f0' }} />
               <Area type="monotone" dataKey="latency" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.15} strokeWidth={2} />
@@ -326,7 +326,7 @@ function ProvidersTab({ providerData, requestPieData }) {
               <XAxis dataKey="provider" tick={{ fill: '#94a3b8', fontSize: 11 }} />
               <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
               <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }} labelStyle={{ color: '#f1f5f9' }} itemStyle={{ color: '#e2e8f0' }} />
-              <Legend wrapperStyle={{ color: '#94a3b8', fontSize: 11 }} />
+              <Legend wrapperStyle={{ color: '#94a3b8', fontSize: 13 }} />
               <Bar dataKey="input_tokens" name="Input Tokens" fill="#6366f1" radius={[4, 4, 0, 0]} />
               <Bar dataKey="output_tokens" name="Output Tokens" fill="#a855f7" radius={[4, 4, 0, 0]} />
             </BarChart>
@@ -443,7 +443,7 @@ function UseCasesTab({ useCaseData }) {
               <XAxis dataKey="use_case" tick={{ fill: '#94a3b8', fontSize: 11 }} />
               <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} />
               <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }} labelStyle={{ color: '#f1f5f9' }} itemStyle={{ color: '#e2e8f0' }} />
-              <Legend wrapperStyle={{ color: '#94a3b8', fontSize: 11 }} />
+              <Legend wrapperStyle={{ color: '#94a3b8', fontSize: 13 }} />
               <Bar dataKey="input_tokens" name="Input Tokens" fill="#6366f1" radius={[4, 4, 0, 0]} />
               <Bar dataKey="output_tokens" name="Output Tokens" fill="#ec4899" radius={[4, 4, 0, 0]} />
             </BarChart>
@@ -477,22 +477,22 @@ function HistoryTab({ data }) {
             <tbody>
               {data.slice(0, 50).map((r, i) => (
                 <tr key={i} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-all">
-                  <td className="py-2.5 px-3 text-slate-500 text-xs font-mono">
+                  <td className="py-2.5 px-3 text-slate-500 text-sm font-mono">
                     {new Date(r.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </td>
                   <td className="py-2.5 px-3">
                     <span className="flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full" style={{ background: PROVIDER_COLORS[r.provider] || '#64748b' }} />
-                      <span className="text-white text-xs">{r.provider}</span>
+                      <span className="text-white text-sm">{r.provider}</span>
                     </span>
                   </td>
-                  <td className="py-2.5 px-3 font-mono text-xs text-blue-400 max-w-[180px] truncate">{r.model_id}</td>
-                  <td className="py-2.5 px-3 text-xs capitalize">{r.use_case}</td>
-                  <td className="py-2.5 px-3 text-right font-mono text-xs text-purple-400">{r.latency_ms}ms</td>
-                  <td className="py-2.5 px-3 text-right font-mono text-xs">
+                  <td className="py-2.5 px-3 font-mono text-sm text-blue-400 max-w-[180px] truncate">{r.model_id}</td>
+                  <td className="py-2.5 px-3 text-sm capitalize">{r.use_case}</td>
+                  <td className="py-2.5 px-3 text-right font-mono text-sm text-purple-400">{r.latency_ms}ms</td>
+                  <td className="py-2.5 px-3 text-right font-mono text-sm">
                     {((parseInt(r.input_tokens || 0)) + (parseInt(r.output_tokens || 0))).toLocaleString()}
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono text-xs text-emerald-400">${parseFloat(r.cost || 0).toFixed(6)}</td>
+                  <td className="py-2.5 px-3 text-right font-mono text-sm text-emerald-400">${parseFloat(r.cost || 0).toFixed(6)}</td>
                 </tr>
               ))}
             </tbody>
