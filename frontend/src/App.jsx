@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { modelMatrix, modelRegistry, capabilityKeys, getCapabilityBadges } from './data';
 import { 
   BarChart3, RotateCcw, Play, Sparkles, Paperclip, X, FileText, 
@@ -11,7 +11,7 @@ import EvaluationEngine from './EvaluationEngine';
 
 const API_BASE = 'http://localhost:8000/api';
 
-const useCaseTags = ["All", "Chat", "Code", "RAG", "Vision"];
+const useCaseTags = ["All", "Chat", "Code", "RAG", "Vision", "Summarization", "Tool Calling", "Structured Output"];
 const providers = ["All", "Amazon", "Meta", "Mistral AI", "Google", "OpenAI", "DeepSeek"];
 
 function App() {
@@ -24,7 +24,7 @@ function App() {
   const [response, setResponse] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [metrics, setMetrics] = useState({ input: 9, output: 127, cost: 0.00041, latency: '3428ms' });
+  const [metrics, setMetrics] = useState({ input: 0, output: 0, cost: 0, latency: '0ms' });
   
   const [paramsOpen, setParamsOpen] = useState(false);
   const [temperature, setTemperature] = useState(0.7);
@@ -33,16 +33,40 @@ function App() {
   const [autoSelect, setAutoSelect] = useState(false);
   const [detectedTags, setDetectedTags] = useState([]);
   const [recommendedModel, setRecommendedModel] = useState(null);
+  const [selectedModelId, setSelectedModelId] = useState('');
 
   // Map Use Case Tag to internal data key
   const tagToKey = (tag) => {
-    const map = { "Chat": "reasoning", "Vision": "vision", "Code": "reasoning", "RAG": "summarization" };
+    const map = { "Chat": "reasoning", "Vision": "vision", "Code": "coding", "RAG": "summarization", "Summarization": "summarization", "Tool Calling": "tool_calling", "Structured Output": "structured_output" };
     return map[tag] || "reasoning";
   };
 
-  const currentModelData = modelMatrix[selectedProvider]?.[tagToKey(selectedUseCase)];
-  const modelId = currentModelData?.id || "N/A";
-  const modelTags = currentModelData?.tags || [];
+  // Filter models for selection
+  const availableModels = modelRegistry.filter(m => 
+    (selectedProvider === 'All' || m.provider === selectedProvider) &&
+    (selectedUseCase === 'All' || m[tagToKey(selectedUseCase)])
+  );
+
+  // Sync selectedModelId when filters change
+  useEffect(() => {
+    if (availableModels.length > 0) {
+      if (!availableModels.find(m => m.model_id === selectedModelId)) {
+        setSelectedModelId(availableModels[0].model_id);
+      }
+    } else {
+      setSelectedModelId('');
+    }
+  }, [selectedProvider, selectedUseCase]);
+
+  // Derived data for the active selection
+  const currentModelData = modelRegistry.find(m => m.model_id === selectedModelId) || availableModels[0];
+  const modelId = currentModelData?.model_id || "N/A";
+  const modelTags = currentModelData ? [
+    currentModelData.provider.toUpperCase(),
+    `${Math.round(currentModelData.context_window / 1000)}k Context`,
+    ...capabilityKeys.filter(k => currentModelData[k]).map(c => c.replace('_', ' ').toUpperCase())
+  ] : [];
+
 
   const handleGenerate = async () => {
     if (!prompt) return;
@@ -50,6 +74,7 @@ function App() {
     setError('');
     setDetectedTags([]);
     setRecommendedModel(null);
+    setMetrics({ input: 0, output: 0, cost: '0.000000', latency: '0ms' });
 
     try {
       if (autoSelect) {
@@ -83,6 +108,7 @@ function App() {
           body: JSON.stringify({ 
             provider: selectedProvider, 
             use_case: tagToKey(selectedUseCase), 
+            model_id: selectedModelId,
             prompt 
           }),
         });
@@ -224,11 +250,14 @@ function App() {
             <label className="text-xs font-bold uppercase text-slate-500 mb-3 block tracking-widest">Model</label>
             <div className="relative group">
               <select 
-                value={selectedProvider} 
-                onChange={(e) => setSelectedProvider(e.target.value)}
+                value={selectedModelId} 
+                onChange={(e) => setSelectedModelId(e.target.value)}
                 className="w-full bg-slate-900/80 border border-slate-800 text-white rounded-lg px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-indigo-500 appearance-none cursor-pointer"
               >
-                <option>{modelId}</option>
+                {availableModels.map(m => (
+                  <option key={m.model_id} value={m.model_id}>{m.display_name}</option>
+                ))}
+                {availableModels.length === 0 && <option value="">No models available</option>}
               </select>
               <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
             </div>
@@ -254,7 +283,7 @@ function App() {
             <div className="flex justify-between items-center mb-3">
               <label className="text-xs font-bold uppercase text-slate-500 tracking-widest">Prompt</label>
               <div className="flex gap-4 text-xs font-bold text-slate-600">
-                <button onClick={() => setPrompt('')} className="hover:text-indigo-400 transition-colors uppercase">Clear</button>
+                <button onClick={() => { setPrompt(''); setResponse(''); setMetrics({ input: 0, output: 0, cost: 0, latency: '0ms' }); setError(''); }} className="hover:text-red-400 transition-colors uppercase">Clear</button>
                 <button className="hover:text-indigo-400 transition-colors uppercase">Format JSON</button>
               </div>
             </div>
@@ -342,13 +371,17 @@ function App() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-             <div className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-400">SG</div>
+             <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+               <span className="text-xs font-bold text-emerald-400">Live</span>
+             </div>
+             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 border border-indigo-400/30 flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-indigo-500/20">SG</div>
           </div>
         </nav>
 
         <div className="flex-1 p-8 overflow-auto">
           {view === 'chat' ? (
-            <div className="h-full flex flex-col bg-[#1e293b]/20 border border-slate-800/50 rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="h-full flex flex-col bg-[#1e293b]/20 border border-slate-800/50 rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 response-card">
               <div className="px-6 py-4 border-b border-slate-800/50 flex justify-between items-center bg-[#1e293b]/40">
                 <div className="flex items-center gap-3">
                   <FileText size={18} className="text-indigo-400" />
@@ -361,22 +394,22 @@ function App() {
                 </div>
                 <div className="flex gap-3">
                   <button className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors"><Paperclip size={16} /></button>
-                  <button onClick={() => setResponse('')} className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors"><RotateCcw size={16} /></button>
+                  <button 
+                    onClick={() => {
+                      setResponse('');
+                      setMetrics({ input: 0, output: 0, cost: '0.000000', latency: '0ms' });
+                    }} 
+                    className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors text-slate-400"
+                    title="Clear Response"
+                  >
+                    <RotateCcw size={16} />
+                  </button>
                 </div>
               </div>
 
-              <div className="flex-1 p-8 overflow-auto">
-                {!autoSelect && response && (
-                <div className="mb-8 bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-xl flex items-center gap-4 text-sm text-indigo-200">
-                  <Zap size={16} className="text-indigo-400 shrink-0" />
-                  <p>
-                    <span className="font-bold">Cost Optimization:</span> For short responses ({metrics.output} tokens), save cost & latency with <span className="text-indigo-400 font-bold underline cursor-pointer">Claude Haiku 4.5</span>.
-                  </p>
-                </div>
-                )}
-
+              <div className="flex-1 p-8 overflow-auto custom-scrollbar">
                 {autoSelect && !response && !isLoading && (
-                  <div className="mb-8 bg-purple-500/10 border border-purple-500/20 p-4 rounded-xl flex items-center gap-4 text-sm text-purple-200">
+                  <div className="mb-8 bg-purple-500/10 border border-purple-500/20 p-4 rounded-xl flex items-center gap-4 text-sm text-purple-200 animate-in fade-in duration-500">
                     <Wand2 size={16} className="text-purple-400 shrink-0" />
                     <p>
                       <span className="font-bold">Auto-Select Mode:</span> Your prompt will be analyzed by the Workload Classifier, which will tag the intent and route it to the optimal model automatically.
@@ -384,35 +417,71 @@ function App() {
                   </div>
                 )}
 
+                {isLoading && (
+                  <div className="flex items-center gap-4 mb-6 p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-xl">
+                    <div className="flex gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-bounce" style={{animationDelay: '0ms'}}></span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-bounce" style={{animationDelay: '150ms'}}></span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-bounce" style={{animationDelay: '300ms'}}></span>
+                    </div>
+                    <span className="text-sm text-indigo-300 font-medium">Generating governed response...</span>
+                  </div>
+                )}
+
                 <div className="text-slate-300 leading-relaxed text-base prose prose-invert max-w-none">
-                  {response ? <ReactMarkdown>{response}</ReactMarkdown> : (
-                    <div className="text-slate-600 italic">Enter a prompt in the sidebar and click "Run Prompt" to see the governed output...</div>
+                  {response ? <ReactMarkdown>{response}</ReactMarkdown> : !isLoading && (
+                    <div className="flex flex-col items-center justify-center h-full gap-6 text-center py-20">
+                      <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/20 flex items-center justify-center">
+                        <Sparkles size={32} className="text-indigo-400" />
+                      </div>
+                      <div>
+                        <p className="text-lg font-bold text-slate-400 mb-2">Ready to Run</p>
+                        <p className="text-sm text-slate-600 max-w-md">Enter a prompt in the sidebar and click "Run Prompt" to see the AI-governed output with full telemetry.</p>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
 
               <div className="px-10 py-8 border-t border-slate-800/50 bg-[#1e293b]/40 grid grid-cols-4 gap-8">
-                <div className="space-y-1">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Latency</p>
-                  <p className="text-xl font-bold text-white font-mono">{metrics.latency}</p>
+                <div className="space-y-1 group">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                    <span className={`w-1.5 h-1.5 rounded-full ${metrics.latency !== '0ms' ? 'bg-purple-400 animate-pulse' : 'bg-slate-700'}`}></span>
+                    Latency
+                  </p>
+                  <p className={`text-xl font-bold font-mono transition-colors duration-500 ${metrics.latency !== '0ms' ? 'text-purple-300' : 'text-slate-600'}`}>{metrics.latency}</p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Input Tokens</p>
-                  <p className="text-xl font-bold text-white font-mono">{metrics.input}</p>
+                <div className="space-y-1 group">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                    <span className={`w-1.5 h-1.5 rounded-full ${metrics.input > 0 ? 'bg-blue-400 animate-pulse' : 'bg-slate-700'}`}></span>
+                    Input Tokens
+                  </p>
+                  <p className={`text-xl font-bold font-mono transition-colors duration-500 ${metrics.input > 0 ? 'text-blue-300' : 'text-slate-600'}`}>{metrics.input}</p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Output Tokens</p>
-                  <p className="text-xl font-bold text-white font-mono">{metrics.output}</p>
+                <div className="space-y-1 group">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                    <span className={`w-1.5 h-1.5 rounded-full ${metrics.output > 0 ? 'bg-green-400 animate-pulse' : 'bg-slate-700'}`}></span>
+                    Output Tokens
+                  </p>
+                  <p className={`text-xl font-bold font-mono transition-colors duration-500 ${metrics.output > 0 ? 'text-green-300' : 'text-slate-600'}`}>{metrics.output}</p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Est. Cost</p>
-                  <p className="text-2xl font-bold text-white font-mono">${metrics.cost}</p>
+                <div className="space-y-1 group">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                    <span className={`w-1.5 h-1.5 rounded-full ${metrics.cost > 0 ? 'bg-emerald-400 animate-pulse' : 'bg-slate-700'}`}></span>
+                    Est. Cost
+                  </p>
+                  <p className={`text-2xl font-bold font-mono transition-colors duration-500 ${metrics.cost > 0 ? 'text-emerald-300' : 'text-slate-600'}`}>${metrics.cost}</p>
                 </div>
               </div>
 
               <div className="px-10 py-3 bg-[#0f172a] flex justify-between items-center text-xs font-bold text-slate-600 uppercase tracking-tighter">
                 <span>Context Window Usage</span>
-                <span>{metrics.input + metrics.output} tokens used</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-32 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-1000" style={{width: `${Math.min(100, ((metrics.input + metrics.output) / 128000) * 100)}%`}}></div>
+                  </div>
+                  <span>{(metrics.input + metrics.output).toLocaleString()} tokens</span>
+                </div>
               </div>
             </div>
           ) : (

@@ -15,6 +15,7 @@ MODEL_REGISTRY = [
         "provider": "Google",
         "display_name": "Gemini 2.5 Pro",
         "reasoning": True,
+        "coding": True,
         "tool_calling": True,
         "summarization": True,
         "structured_output": True,
@@ -31,6 +32,7 @@ MODEL_REGISTRY = [
         "provider": "Google",
         "display_name": "Gemini 2.5 Flash",
         "reasoning": True,
+        "coding": True,
         "tool_calling": True,
         "summarization": True,
         "structured_output": True,
@@ -43,10 +45,11 @@ MODEL_REGISTRY = [
         "context_window": 1048576,
     },
     {
-        "model_id": "gemini-2.5-flash-lite",
+        "model_id": "gemini-1.5-flash-8b",
         "provider": "Google",
-        "display_name": "Gemini 2.5 Flash Lite",
+        "display_name": "Gemini 1.5 Flash-8B",
         "reasoning": False,
+        "coding": False,
         "tool_calling": False,
         "summarization": True,
         "structured_output": True,
@@ -64,6 +67,7 @@ MODEL_REGISTRY = [
         "provider": "OpenAI",
         "display_name": "GPT-4o",
         "reasoning": True,
+        "coding": True,
         "tool_calling": True,
         "summarization": True,
         "structured_output": True,
@@ -80,6 +84,7 @@ MODEL_REGISTRY = [
         "provider": "OpenAI",
         "display_name": "GPT-4o Mini",
         "reasoning": True,
+        "coding": True,
         "tool_calling": True,
         "summarization": True,
         "structured_output": True,
@@ -91,12 +96,47 @@ MODEL_REGISTRY = [
         "quality_score": 3.8,
         "context_window": 128000,
     },
+    {
+        "model_id": "o1-preview",
+        "provider": "OpenAI",
+        "display_name": "o1 Preview",
+        "reasoning": True,
+        "coding": True,
+        "tool_calling": False,
+        "summarization": True,
+        "structured_output": True,
+        "rag": True,
+        "vision": False,
+        "multimodality": False,
+        "latency": 5000,
+        "cost_per_1k": 0.015,
+        "quality_score": 4.8,
+        "context_window": 128000,
+    },
+    {
+        "model_id": "o1-mini",
+        "provider": "OpenAI",
+        "display_name": "o1 Mini",
+        "reasoning": True,
+        "coding": True,
+        "tool_calling": False,
+        "summarization": True,
+        "structured_output": True,
+        "rag": True,
+        "vision": False,
+        "multimodality": False,
+        "latency": 1500,
+        "cost_per_1k": 0.003,
+        "quality_score": 4.4,
+        "context_window": 128000,
+    },
     # ── Meta ────────────────────────────────────────────────
     {
         "model_id": "meta/llama-3.3-70b-instruct-maas",
         "provider": "Meta",
         "display_name": "Llama 3.3 70B Instruct",
         "reasoning": True,
+        "coding": True,
         "tool_calling": True,
         "summarization": True,
         "structured_output": True,
@@ -113,6 +153,7 @@ MODEL_REGISTRY = [
         "provider": "Meta",
         "display_name": "Llama 4 Scout 17B",
         "reasoning": True,
+        "coding": True,
         "tool_calling": False,
         "summarization": True,
         "structured_output": False,
@@ -130,6 +171,7 @@ MODEL_REGISTRY = [
         "provider": "Amazon",
         "display_name": "Nova Pro",
         "reasoning": True,
+        "coding": True,
         "tool_calling": True,
         "summarization": True,
         "structured_output": True,
@@ -179,6 +221,7 @@ MODEL_REGISTRY = [
         "provider": "Mistral AI",
         "display_name": "Mistral Large",
         "reasoning": True,
+        "coding": True,
         "tool_calling": True,
         "summarization": True,
         "structured_output": True,
@@ -211,6 +254,7 @@ MODEL_REGISTRY = [
         "provider": "Mistral AI",
         "display_name": "Pixtral Large",
         "reasoning": True,
+        "coding": True,
         "tool_calling": False,
         "summarization": True,
         "structured_output": False,
@@ -228,6 +272,7 @@ MODEL_REGISTRY = [
         "provider": "DeepSeek",
         "display_name": "DeepSeek R1",
         "reasoning": True,
+        "coding": True,
         "tool_calling": False,
         "summarization": True,
         "structured_output": True,
@@ -244,6 +289,7 @@ MODEL_REGISTRY = [
         "provider": "DeepSeek",
         "display_name": "DeepSeek V3.2",
         "reasoning": True,
+        "coding": True,
         "tool_calling": True,
         "summarization": True,
         "structured_output": True,
@@ -259,7 +305,7 @@ MODEL_REGISTRY = [
 
 # Build legacy lookups for backward compatibility with existing chat endpoint
 CAPABILITY_KEYS = [
-    "reasoning", "tool_calling", "summarization", "structured_output",
+    "reasoning", "coding", "tool_calling", "summarization", "structured_output",
     "rag", "vision", "multimodality",
 ]
 
@@ -270,8 +316,19 @@ for entry in MODEL_REGISTRY:
     if prov not in MODEL_MATRIX:
         MODEL_MATRIX[prov] = {}
     for cap in CAPABILITY_KEYS:
-        if entry[cap]:
-            use_case = cap.replace("_", " ")
+        if entry.get(cap, False):
+            # Map internal capabilities to public use cases for the API
+            use_case_map = {
+                "reasoning": "Chat",
+                "coding": "Code",
+                "vision": "Vision",
+                "rag": "RAG",
+                "summarization": "Summarization",
+                "tool_calling": "Tool Calling",
+                "structured_output": "Structured Output"
+            }
+            use_case = use_case_map.get(cap, cap.replace("_", " "))
+            
             # Only store first (highest quality) model per provider+capability
             if use_case not in MODEL_MATRIX[prov]:
                 MODEL_MATRIX[prov][use_case] = entry["model_id"]

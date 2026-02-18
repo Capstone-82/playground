@@ -1,5 +1,5 @@
 import json
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, BackgroundTasks
 from typing import Optional, List
 from app.models.schemas import ChatRequest, ChatResponse
 from app.core.model_matrix import get_model_id, recommend_model, CAPABILITY_KEYS
@@ -12,23 +12,25 @@ router = APIRouter()
 
 
 @router.post("/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest):
+async def chat(request: ChatRequest, background_tasks: BackgroundTasks):
     """
     Unified chat endpoint (text-only).
     Supports auto_select mode for intelligent model routing.
     """
     if request.auto_select:
-        return await _process_chat_auto(prompt=request.prompt)
+        return await _process_chat_auto(prompt=request.prompt, background_tasks=background_tasks)
     return await _process_chat(
         provider=request.provider,
         use_case=request.use_case,
         prompt=request.prompt,
         model_id=request.model_id,
+        background_tasks=background_tasks,
     )
 
 
 @router.post("/chat/vision", response_model=ChatResponse)
 async def chat_vision(
+    background_tasks: BackgroundTasks,
     provider: str = Form(...),
     use_case: str = Form(default="vision"),
     prompt: str = Form(...),
@@ -50,6 +52,7 @@ async def chat_vision(
         model_id=model_id,
         image_bytes=image_bytes,
         mime_type=mime_type,
+        background_tasks=background_tasks,
     )
 
 
@@ -57,6 +60,7 @@ async def _process_chat(
     provider: str,
     use_case: str,
     prompt: str,
+    background_tasks: BackgroundTasks,
     model_id: Optional[str] = None,
     image_bytes: Optional[bytes] = None,
     mime_type: Optional[str] = None,
@@ -77,23 +81,21 @@ async def _process_chat(
             resolved_model, result["input_tokens"], result["output_tokens"]
         )
 
-        # Step 4: Log to Supabase (prompt only, NOT the image)
-        telemetry_data = {
-            "provider": provider,
-            "model_id": resolved_model,
-            "use_case": use_case,
-            "prompt": prompt,
-            "response": result["text"],
-            "input_tokens": result["input_tokens"],
-            "output_tokens": result["output_tokens"],
-            "cost": cost,
-            "latency_ms": result["latency_ms"],
-        }
-
-        try:
-            supabase_service.log_telemetry(telemetry_data)
-        except Exception as e:
-            print(f"Warning: Failed to log telemetry: {e}")
+        # Step 4: Log to Supabase (prompt only, NOT the image) in background
+        background_tasks.add_task(
+            supabase_service.log_telemetry,
+            {
+                "provider": provider,
+                "model_id": resolved_model,
+                "use_case": use_case,
+                "prompt": prompt,
+                "response": result["text"],
+                "input_tokens": result["input_tokens"],
+                "output_tokens": result["output_tokens"],
+                "cost": cost,
+                "latency_ms": result["latency_ms"],
+            }
+        )
 
         # Step 5: Return response
         return ChatResponse(
@@ -133,7 +135,7 @@ async def _classify_prompt(prompt: str) -> List[str]:
         return ["reasoning"]
 
 
-async def _process_chat_auto(prompt: str) -> ChatResponse:
+async def _process_chat_auto(prompt: str, background_tasks: BackgroundTasks) -> ChatResponse:
     """Auto-select the best model based on workload tags, then execute."""
     try:
         # Step 1: Classify the prompt
@@ -155,9 +157,10 @@ async def _process_chat_auto(prompt: str) -> ChatResponse:
             model_id, result["input_tokens"], result["output_tokens"]
         )
 
-        # Step 5: Telemetry
-        try:
-            supabase_service.log_telemetry({
+        # Step 5: Telemetry in background
+        background_tasks.add_task(
+            supabase_service.log_telemetry,
+            {
                 "provider": provider,
                 "model_id": model_id,
                 "use_case": ",".join(tags),
@@ -167,9 +170,8 @@ async def _process_chat_auto(prompt: str) -> ChatResponse:
                 "output_tokens": result["output_tokens"],
                 "cost": cost,
                 "latency_ms": result["latency_ms"],
-            })
-        except Exception as e:
-            print(f"Warning: Failed to log telemetry: {e}")
+            }
+        )
 
         return ChatResponse(
             response=result["text"],
