@@ -36,6 +36,20 @@ class EvalRequest(BaseModel):
     prompts: list[str]
     models: list[EvalModelConfig]
     criteria: list[str] = ["Correctness", "Relevance", "Clarity", "Completeness"]
+    scoring_type: Optional[str] = "Manual"  # "Manual" or "AI"
+    judge_model: Optional[str] = None
+    judge_provider: Optional[str] = None
+
+
+class AIScoreItem(BaseModel):
+    metric: str
+    score: int
+    reason: str
+
+
+class PromptQuality(BaseModel):
+    score: int
+    summary: str
 
 
 class EvalResponseItem(BaseModel):
@@ -44,12 +58,15 @@ class EvalResponseItem(BaseModel):
     model_id: str
     response: str
     metrics: Dict[str, Any]
-    scores: Optional[Dict[str, float]] = None
+    scores: Optional[Dict[str, Any]] = None
+    ai_evaluations: Optional[List[AIScoreItem]] = None
+    prompt_quality: Optional[PromptQuality] = None
 
 
 class EvalResponse(BaseModel):
     results: list[EvalResponseItem]
     summary_metrics: Dict[str, Any] = {}
+    prompt_metadata: Optional[Dict[str, Any]] = None
 
 
 # ── Tagging & Model Selection Schemas ──────────────────────
@@ -112,10 +129,7 @@ class AIScoreRequest(BaseModel):
     judge_provider: str = "Google"
 
 
-class AIScoreItem(BaseModel):
-    metric: str
-    score: int
-    reason: str
+
 
 
 class AIScoreResponse(BaseModel):

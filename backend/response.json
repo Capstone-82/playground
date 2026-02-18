@@ -1,0 +1,176 @@
+{
+  "results": [
+    {
+      "prompt": "Draft a formal data governance policy for a financial services firm specializing in crypto assets. Ensure it covers private key management and regulatory reporting.",
+      "provider": "OpenAI",
+      "model_id": "gpt-4o-mini",
+      "response": "# Data Governance Policy for [Firm Name] \n## Effective Date: [Insert Date]\n## Version: 1.0\n\n### 1. Purpose\nThis Data Governance Policy establishes principles and practices to ensure the effective management, protection, and compliance of data within [Firm Name] as a financial services firm specializing in crypto assets. It aims to support data integrity, confidentiality, and regulatory requirements in the context of private key management and regulatory reporting.\n\n### 2. Scope\nThis policy applies to all employees, contractors, and third-party service providers that handle data in any form, including but not limited to digital, paper, or electronic formats, within [Firm Name]. \n\n### 3. Data Governance Framework\n3.1 **Data Ownership and Stewardship**\n- Clearly define data owners responsible for specific datasets, ensuring accountability for data accuracy, integrity, and availability.\n- Designate data stewards who will oversee day-to-day data management activities.\n\n3.2 **Data Classification**\n- All data must be classified based on sensitivity and regulatory requirements, including categories such as Public, Internal, Confidential, and Regulated Data.\n- Crypto asset data and client financial information will fall under the \"Confidential\" and \"Regulated Data\" categories, requiring enhanced protection measures.\n\n3.3 **Data Quality Management**\n- Implement data quality assessments to ensure data accuracy, completeness, consistency, and reliability.\n- Establish procedures for regular data validation and reconciliation, especially for crypto transaction records.\n\n### 4. Private Key Management\n4.1 **Private Key Generation and Storage**\n- Private keys must be generated securely using industry-standard cryptographic algorithms and procedures.\n- Only authorized personnel may access private keys. All access must be logged, monitored, and reviewed regularly.\n\n4.2 **Key Custody**\n- Implement a tiered access approach to private key custody, utilizing hardware security modules (HSMs) or secure multi-signature wallets for key storage.\n- Maintain a clear separation of duties to minimize the risk of unauthorized access or key compromise.\n\n4.3 **Key Backup and Recovery**\n- Establish a secure key backup procedure in line with best practices, ensuring redundancy and secure storage locations.\n- Develop a documented key recovery plan that includes the steps to be followed in the event of a key compromise or loss.\n\n4.4 **Key Lifecycle Management**\n- Define and enforce a lifecycle management process for private keys from creation to destruction, ensuring that keys are retired securely and in accordance with regulatory requirements.\n\n### 5. Regulatory Reporting\n5.1 **Compliance with Regulations**\n- Ensure adherence to all relevant regulations, including but not limited to AML (Anti-Money Laundering), KYC (Know Your Customer), and the SEC/CFTC requirements applicable to crypto assets.\n- Regularly review and update reporting practices to align with changes in regulatory frameworks.\n\n5.2 **Data Reporting Process**\n- Establish a standardized process for generating and submitting regulatory reports, ensuring accuracy, completeness, and timeliness.\n- Ensure that the data included in these reports is derived from verified sources and subject to quality and security measures.\n\n5.3 **Audit and Monitoring**\n- Conduct regular audits of data management practices, private key handling, and regulatory reporting to ensure compliance with both internal policies and external regulations.\n- Implement continuous monitoring mechanisms to detect and respond to anomalies and potential data breaches.\n\n### 6. Training and Awareness\n- Provide mandatory data governance and regulatory training for all employees, emphasizing the importance of data protection, private key management, and compliance with regulatory requirements.\n- Regularly update training content to reflect changes in regulations, processes, and emerging threats in the crypto space.\n\n### 7. Policy Review and Maintenance\n- This policy must be reviewed at least annually or upon significant regulatory changes or operational alterations.\n- Any amendments to this policy must be documented, communicated to all stakeholders, and approved by the relevant governing body within [Firm Name].\n\n### 8. Enforcement\n- Non-compliance with this policy may result in disciplinary action, up to and including termination of employment or contracts.\n- [Firm Name] reserves the right to review all relevant records and activities to ensure compliance with this policy.\n\n---\n\nBy adopting this Data Governance Policy, [Firm Name] aims to foster a culture of accountability, compliance, and data stewardship that aligns with industry best practices and regulatory requirements in the evolving landscape of financial services in crypto assets. \n\n**Approved By:**  \n**[Authorized Signatory]**  \n**[Title]**  \n**[Date]**  ",
+      "metrics": {
+        "input_tokens": 33,
+        "output_tokens": 906,
+        "cost": 0.00054855,
+        "latency_ms": 15081
+      },
+      "scores": {
+        "Correctness": 5,
+        "Compliance": 5,
+        "Logical Reasoning": 5,
+        "Professional Tone": 5
+      },
+      "ai_evaluations": [
+        {
+          "metric": "Correctness",
+          "score": 5,
+          "reason": "The model-generated response provides a comprehensive and detailed data governance policy that covers private key management and regulatory reporting, which are critical aspects for a financial services firm specializing in crypto assets. The policy includes well-structured sections on data governance framework, private key management, regulatory reporting, and other relevant areas, indicating a high level of correctness."
+        },
+        {
+          "metric": "Compliance",
+          "score": 5,
+          "reason": "The policy demonstrates a strong focus on compliance with relevant regulations such as AML, KYC, and SEC/CFTC requirements. It outlines procedures for data classification, quality management, and reporting that align with regulatory expectations. The inclusion of regular audits and monitoring further supports compliance efforts, suggesting that the policy is comprehensive and compliant with regulatory standards."
+        },
+        {
+          "metric": "Logical Reasoning",
+          "score": 5,
+          "reason": "The policy is logically structured, starting with a clear purpose and scope, followed by detailed sections on data governance framework, private key management, and regulatory reporting. The document demonstrates a coherent flow of ideas and builds a logical case for the importance of data governance in the context of crypto assets. The use of specific sections and subsections enhances clarity and facilitates understanding."
+        },
+        {
+          "metric": "Professional Tone",
+          "score": 5,
+          "reason": "The tone of the policy is formal and professional, suitable for a corporate document of this nature. The language is clear and precise, avoiding ambiguity and ensuring that the policy can be easily understood by all stakeholders. The inclusion of a clear approval section and the requirement for documented amendments further contribute to the professional tone."
+        }
+      ]
+    },
+    {
+      "prompt": "Draft a formal data governance policy for a financial services firm specializing in crypto assets. Ensure it covers private key management and regulatory reporting.",
+      "provider": "Meta",
+      "model_id": "meta/llama-3.3-70b-instruct-maas",
+      "response": "**Data Governance Policy for Crypto Asset Financial Services Firm**\n\n**Introduction**\n\n[Company Name], a financial services firm specializing in crypto assets, is committed to maintaining the highest standards of data governance to ensure the security, integrity, and compliance of our operations. This policy outlines the framework for managing sensitive data, including private keys, and regulatory reporting requirements.\n\n**Scope**\n\nThis policy applies to all employees, contractors, and third-party vendors of [Company Name] who handle sensitive data, including but not limited to:\n\n* Private keys and cryptographic materials\n* Customer personal and financial information\n* Transactional data\n* Regulatory reporting data\n\n**Objectives**\n\nThe objectives of this policy are to:\n\n1. Ensure the secure management and storage of private keys and cryptographic materials.\n2. Protect customer personal and financial information from unauthorized access, disclosure, or misuse.\n3. Maintain accurate and complete records of transactions and regulatory reporting data.\n4. Comply with relevant regulatory requirements and industry standards.\n\n**Private Key Management**\n\n1. **Private Key Generation**: Private keys shall be generated using a secure, audited, and compliant process.\n2. **Private Key Storage**: Private keys shall be stored in a secure, encrypted, and access-controlled environment, such as a Hardware Security Module (HSM) or a secure key management system.\n3. **Private Key Access**: Access to private keys shall be restricted to authorized personnel with a need-to-know basis, using multi-factor authentication and role-based access control.\n4. **Private Key Rotation**: Private keys shall be rotated regularly, at least every 90 days, or as required by regulatory or industry standards.\n5. **Private Key Revocation**: Private keys shall be revoked immediately in the event of a security incident, key compromise, or employee termination.\n\n**Regulatory Reporting**\n\n1. **Reporting Requirements**: [Company Name] shall comply with all relevant regulatory reporting requirements, including but not limited to:\n\t* Anti-Money Laundering (AML) and Know-Your-Customer (KYC) reporting\n\t* Financial Crimes Enforcement Network (FinCEN) reporting\n\t* Securities and Exchange Commission (SEC) reporting\n2. **Reporting Frequency**: Regulatory reports shall be submitted in a timely manner, as required by the relevant regulatory authority.\n3. **Reporting Accuracy**: Regulatory reports shall be accurate, complete, and consistent with [Company Name]'s records and systems.\n4. **Reporting Security**: Regulatory reports shall be transmitted securely, using encrypted and authenticated channels.\n\n**Data Security**\n\n1. **Data Encryption**: Sensitive data shall be encrypted at rest and in transit, using industry-standard encryption protocols and algorithms.\n2. **Access Control**: Access to sensitive data shall be restricted to authorized personnel with a need-to-know basis, using multi-factor authentication and role-based access control.\n3. **Data Backup**: Sensitive data shall be backed up regularly, at least daily, and stored in a secure, encrypted, and access-controlled environment.\n4. **Data Retention**: Sensitive data shall be retained for the minimum period required by regulatory or industry standards, and then securely deleted.\n\n**Compliance and Monitoring**\n\n1. **Compliance Officer**: [Company Name] shall appoint a Compliance Officer to oversee and ensure compliance with this policy and relevant regulatory requirements.\n2. **Monitoring and Auditing**: [Company Name] shall regularly monitor and audit its systems, processes, and personnel to ensure compliance with this policy and regulatory requirements.\n3. **Incident Response**: [Company Name] shall have an incident response plan in place to respond to security incidents, data breaches, or regulatory non-compliance.\n\n**Training and Awareness**\n\n1. **Employee Training**: [Company Name] shall provide regular training and awareness programs for employees on data governance, private key management, and regulatory reporting.\n2. **Contractor and Vendor Training**: [Company Name] shall ensure that contractors and vendors handling sensitive data receive similar training and awareness programs.\n\n**Review and Update**\n\nThis policy shall be reviewed and updated at least annually, or as required by regulatory or industry standards. Changes to this policy shall be approved by the Compliance Officer and communicated to all relevant personnel.\n\n**Acknowledgement**\n\nAll employees, contractors, and third-party vendors of [Company Name] shall acknowledge and agree to comply with this policy as a condition of their employment or engagement.\n\nBy implementing and enforcing this data governance policy, [Company Name] demonstrates its commitment to protecting sensitive data, maintaining regulatory compliance, and upholding the highest standards of integrity and security in the crypto asset financial services industry.",
+      "metrics": {
+        "input_tokens": 61,
+        "output_tokens": 917,
+        "cost": 0.00029954,
+        "latency_ms": 7896
+      },
+      "scores": {
+        "Correctness": 3,
+        "Compliance": 3,
+        "Logical Reasoning": 3,
+        "Professional Tone": 3
+      },
+      "ai_evaluations": [
+        {
+          "metric": "Correctness",
+          "score": 3,
+          "reason": "AI Judge response could not be parsed"
+        },
+        {
+          "metric": "Compliance",
+          "score": 3,
+          "reason": "AI Judge response could not be parsed"
+        },
+        {
+          "metric": "Logical Reasoning",
+          "score": 3,
+          "reason": "AI Judge response could not be parsed"
+        },
+        {
+          "metric": "Professional Tone",
+          "score": 3,
+          "reason": "AI Judge response could not be parsed"
+        }
+      ]
+    },
+    {
+      "prompt": "Solve this optimization problem: A factory produces two products, A and B. A requires 2 hours of labor and 1kg of raw material. B requires 1 hour of labor and 3kg of material. Total labor is 100 hours and material is 150kg. Maximize profit if A=$50 and B=$30.",
+      "provider": "OpenAI",
+      "model_id": "gpt-4o-mini",
+      "response": "To solve this optimization problem, we can set it up as a linear programming problem.\n\n**Define the variables:**\n- Let \\( x \\) be the number of product A produced.\n- Let \\( y \\) be the number of product B produced.\n\n**Objective function:**\nWe want to maximize the total profit. The profit from product A is $50, and the profit from product B is $30. Therefore, the objective function to maximize is:\n\\[\nZ = 50x + 30y\n\\]\n\n**Constraints:**\n1. Labor constraint: Production of product A requires 2 hours and product B requires 1 hour. The total available labor is 100 hours:\n\\[\n2x + y \\leq 100\n\\]\n\n2. Material constraint: Product A requires 1kg of raw material, and product B requires 3kg. The total available raw material is 150kg:\n\\[\nx + 3y \\leq 150\n\\]\n\n3. Non-negativity constraints:\n\\[\nx \\geq 0, \\quad y \\geq 0\n\\]\n\n**Set up the problem:**\n\nMaximize:\n\\[\nZ = 50x + 30y\n\\]\n\nSubject to:\n\\[\n2x + y \\leq 100\n\\]\n\\[\nx + 3y \\leq 150\n\\]\n\\[\nx \\geq 0, \\quad y \\geq 0\n\\]\n\n**Graphing the constraints:**\n1. **For \\( 2x + y = 100 \\)**:\n   - If \\( x = 0 \\), \\( y = 100 \\) → point (0, 100)\n   - If \\( y = 0 \\), \\( x = 50 \\) → point (50, 0)\n\n2. **For \\( x + 3y = 150 \\)**:\n   - If \\( x = 0 \\), \\( y = 50 \\) → point (0, 50)\n   - If \\( y = 0 \\), \\( x = 150 \\) → point (150, 0)\n\n**Finding intersections:**\nTo find the intersection of the two lines:\n1. From \\( 2x + y = 100 \\), rearranging gives \\( y = 100 - 2x \\).\n2. Substitute \\( y \\) into \\( x + 3y = 150 \\):\n   \\[\n   x + 3(100 - 2x) = 150\n   \\]\n   \\[\n   x + 300 - 6x = 150\n   \\]\n   \\[\n   -5x + 300 = 150\n   \\]\n   \\[\n   -5x = -150\n   \\]\n   \\[\n   x = 30\n   \\]\n   Substitute \\( x = 30 \\) back into \\( y = 100 - 2x \\):\n   \\[\n   y = 100 - 2(30) = 40\n   \\]\n\nSo the intersection point is \\( (30, 40) \\).\n\n**Feasible Region:**\nThe feasible points determined from constraints are:\n- \\( (0, 0) \\)\n- \\( (0, 50) \\)\n- \\( (50, 0) \\)\n- \\( (30, 40) \\)\n\n**Calculating the objective function at each vertex:**\n1. \\( (0, 0) \\): \\( Z = 50(0) + 30(0) = 0 \\)\n2. \\( (0, 50) \\): \\( Z = 50(0) + 30(50) = 1500 \\)\n3. \\( (50, 0) \\): \\( Z = 50(50) + 30(0) = 2500 \\)\n4. \\( (30, 40) \\): \\( Z = 50(30) + 30(40) = 1500 + 1200 = 2700 \\)\n\n**Conclusion:**\nThe maximum profit of \\$2700 occurs at the point \\( (30, 40) \\).\n\nTherefore, the factory should produce:\n- 30 units of product A\n- 40 units of product B",
+      "metrics": {
+        "input_tokens": 76,
+        "output_tokens": 888,
+        "cost": 0.0005442,
+        "latency_ms": 14460
+      },
+      "scores": {
+        "Correctness": 5,
+        "Compliance": 5,
+        "Logical Reasoning": 5,
+        "Professional Tone": 5
+      },
+      "ai_evaluations": [
+        {
+          "metric": "Correctness",
+          "score": 5,
+          "reason": "The model response accurately solves the optimization problem by setting up the linear programming problem, defining the objective function and constraints, finding the feasible region, and determining the maximum profit at the point (30, 40). The calculations are correct, and the conclusion is well-supported."
+        },
+        {
+          "metric": "Compliance",
+          "score": 5,
+          "reason": "The response complies with the requirements of the problem by providing a clear and step-by-step solution to maximize profit given the constraints of labor and material. The response adheres to the logical structure of solving linear programming problems."
+        },
+        {
+          "metric": "Logical Reasoning",
+          "score": 5,
+          "reason": "The model demonstrates excellent logical reasoning by breaking down the problem into defining variables, formulating the objective function, identifying constraints, graphing the constraints, finding the intersection points, and evaluating the objective function at each vertex of the feasible region. The steps are logical and methodically correct."
+        },
+        {
+          "metric": "Professional Tone",
+          "score": 5,
+          "reason": "The response is presented in a clear, structured, and professional manner. The use of mathematical notation and step-by-step explanations contributes to a formal and educational tone, making it easy to follow and understand the solution process."
+        }
+      ]
+    },
+    {
+      "prompt": "Solve this optimization problem: A factory produces two products, A and B. A requires 2 hours of labor and 1kg of raw material. B requires 1 hour of labor and 3kg of material. Total labor is 100 hours and material is 150kg. Maximize profit if A=$50 and B=$30.",
+      "provider": "Meta",
+      "model_id": "meta/llama-3.3-70b-instruct-maas",
+      "response": "To solve this optimization problem, we can use linear programming. Let's define the variables:\n\n* x: number of units of product A produced\n* y: number of units of product B produced\n\nThe objective function is to maximize the profit:\n\nMaximize: 50x + 30y\n\nSubject to the constraints:\n\n* Labor constraint: 2x + y ≤ 100 (since A requires 2 hours of labor and B requires 1 hour of labor, and total labor is 100 hours)\n* Material constraint: x + 3y ≤ 150 (since A requires 1kg of raw material and B requires 3kg of raw material, and total material is 150kg)\n* Non-negativity constraints: x ≥ 0, y ≥ 0 (since the number of units produced cannot be negative)\n\nTo solve this problem, we can graph the constraints and find the feasible region. The feasible region is the area where all the constraints are satisfied.\n\nThe labor constraint is: 2x + y ≤ 100\nThe material constraint is: x + 3y ≤ 150\n\nWe can graph these constraints on a coordinate plane:\n\nThe labor constraint is a line with a slope of -2 and a y-intercept of 100.\nThe material constraint is a line with a slope of -1/3 and a y-intercept of 50.\n\nThe feasible region is the area below both lines.\n\nTo find the optimal solution, we need to find the point in the feasible region that maximizes the objective function.\n\nOne way to do this is to use the corner point method. We can find the corner points of the feasible region by solving the system of equations formed by the constraints.\n\nThe corner points are:\n\n* (0, 0)\n* (0, 50)\n* (50, 0)\n* (30, 40)\n\nWe can evaluate the objective function at each corner point:\n\n* (0, 0): 50(0) + 30(0) = 0\n* (0, 50): 50(0) + 30(50) = 1500\n* (50, 0): 50(50) + 30(0) = 2500\n* (30, 40): 50(30) + 30(40) = 1500 + 1200 = 2700\n\nThe maximum profit is achieved at the point (30, 40), where x = 30 and y = 40.\n\nTherefore, the optimal solution is to produce 30 units of product A and 40 units of product B, which results in a maximum profit of $2700.",
+      "metrics": {
+        "input_tokens": 105,
+        "output_tokens": 550,
+        "cost": 0.0001865,
+        "latency_ms": 5821
+      },
+      "scores": {
+        "Correctness": 3,
+        "Compliance": 3,
+        "Logical Reasoning": 3,
+        "Professional Tone": 3
+      },
+      "ai_evaluations": [
+        {
+          "metric": "Correctness",
+          "score": 3,
+          "reason": "AI Judge response could not be parsed"
+        },
+        {
+          "metric": "Compliance",
+          "score": 3,
+          "reason": "AI Judge response could not be parsed"
+        },
+        {
+          "metric": "Logical Reasoning",
+          "score": 3,
+          "reason": "AI Judge response could not be parsed"
+        },
+        {
+          "metric": "Professional Tone",
+          "score": 3,
+          "reason": "AI Judge response could not be parsed"
+        }
+      ]
+    }
+  ],
+  "summary_metrics": {
+    "OpenAI:gpt-4o-mini": {
+      "avg_latency": 14770,
+      "avg_cost": 0.000546,
+      "avg_tokens": 897
+    },
+    "Meta:meta/llama-3.3-70b-instruct-maas": {
+      "avg_latency": 6858,
+      "avg_cost": 0.000243,
+      "avg_tokens": 734
+    }
+  }
+}

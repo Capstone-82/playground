@@ -11,8 +11,8 @@ import EvaluationEngine from './EvaluationEngine';
 
 const API_BASE = 'http://localhost:8000/api';
 
-const useCaseTags = ["All", "Chat", "Code", "RAG", "Vision", "Summarization", "Tool Calling", "Structured Output"];
-const providers = ["All", "Amazon", "Meta", "Mistral AI", "Google", "OpenAI", "DeepSeek"];
+const useCaseTags = ["Chat", "Code", "RAG", "Vision", "Summarization", "Tool Calling", "Structured Output"];
+const providers = ["Amazon", "Meta", "Mistral AI", "Google", "OpenAI", "DeepSeek"];
 
 function App() {
   const [view, setView] = useState('chat');
@@ -37,14 +37,21 @@ function App() {
 
   // Map Use Case Tag to internal data key
   const tagToKey = (tag) => {
-    const map = { "Chat": "reasoning", "Vision": "vision", "Code": "coding", "RAG": "summarization", "Summarization": "summarization", "Tool Calling": "tool_calling", "Structured Output": "structured_output" };
+    const map = { 
+      "Chat": "reasoning", 
+      "Vision": "vision", 
+      "Code": "coding", 
+      "RAG": "rag", 
+      "Summarization": "summarization", 
+      "Tool Calling": "tool_calling", 
+      "Structured Output": "structured_output" 
+    };
     return map[tag] || "reasoning";
   };
 
   // Filter models for selection
   const availableModels = modelRegistry.filter(m => 
-    (selectedProvider === 'All' || m.provider === selectedProvider) &&
-    (selectedUseCase === 'All' || m[tagToKey(selectedUseCase)])
+    m.provider === selectedProvider && m[tagToKey(selectedUseCase)]
   );
 
   // Sync selectedModelId when filters change
@@ -71,6 +78,7 @@ function App() {
   const handleGenerate = async () => {
     if (!prompt) return;
     setIsLoading(true);
+    setResponse('');
     setError('');
     setDetectedTags([]);
     setRecommendedModel(null);
@@ -138,32 +146,7 @@ function App() {
       {view === 'chat' && (
         <aside className="w-[400px] bg-[#1e293b]/30 border-r border-slate-800/50 flex flex-col p-6 overflow-y-auto shrink-0 animate-in slide-in-from-left duration-300">
           
-          {/* Auto-Select Toggle */}
-          <section className="mb-6">
-            <button
-              onClick={() => setAutoSelect(!autoSelect)}
-              className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${
-                autoSelect 
-                  ? 'bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border-indigo-500/50 shadow-lg shadow-indigo-500/10' 
-                  : 'bg-slate-900/50 border-slate-800 hover:border-slate-700'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-                  autoSelect ? 'bg-indigo-600 shadow-lg shadow-indigo-500/30' : 'bg-slate-800'
-                }`}>
-                  <Wand2 size={16} className={autoSelect ? 'text-white' : 'text-slate-500'} />
-                </div>
-                <div className="text-left">
-                  <span className="text-sm font-bold text-white block">Auto-Select Model</span>
-                  <span className="text-xs text-slate-500">AI classifies your prompt & picks the best model</span>
-                </div>
-              </div>
-              <div className={`w-10 h-5 rounded-full transition-all relative ${autoSelect ? 'bg-indigo-600' : 'bg-slate-700'}`}>
-                <div className={`w-4 h-4 rounded-full bg-white absolute top-0.5 transition-all shadow-sm ${autoSelect ? 'left-5.5 translate-x-[2px]' : 'left-0.5'}`} />
-              </div>
-            </button>
-          </section>
+
 
           {/* Detected Tags Banner (shown after auto-select run) */}
           {autoSelect && detectedTags.length > 0 && (
@@ -190,28 +173,7 @@ function App() {
             </section>
           )}
 
-          {/* Model Category */}
-          {!autoSelect && (
-            <>
-          <section className="mb-8">
-            <label className="text-xs font-bold uppercase text-slate-500 mb-3 block tracking-widest">Model Category</label>
-            <div className="grid grid-cols-2 gap-3">
-              <button 
-                onClick={() => setCategory('System')}
-                className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all ${category === 'System' ? 'bg-indigo-600/10 border-indigo-500 text-white' : 'bg-slate-900/50 border-slate-800 text-slate-50'}`}
-              >
-                <Lock size={20} className="mb-2 opacity-50" />
-                <span className="text-sm font-bold">System Defined</span>
-              </button>
-              <button 
-                onClick={() => setCategory('Foundation')}
-                className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all ${category === 'Foundation' ? 'bg-indigo-600/10 border-indigo-500 text-white' : 'bg-slate-900/50 border-slate-800 text-slate-500'}`}
-              >
-                <Brain size={20} className="mb-2 text-indigo-400" />
-                <span className="text-sm font-bold">Foundation</span>
-              </button>
-            </div>
-          </section>
+
 
           {/* Provider Tags */}
           <section className="mb-6">
@@ -248,19 +210,34 @@ function App() {
           {/* Model Selection */}
           <section className="mb-6">
             <label className="text-xs font-bold uppercase text-slate-500 mb-3 block tracking-widest">Model</label>
-            <div className="relative group">
-              <select 
-                value={selectedModelId} 
-                onChange={(e) => setSelectedModelId(e.target.value)}
-                className="w-full bg-slate-900/80 border border-slate-800 text-white rounded-lg px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-indigo-500 appearance-none cursor-pointer"
-              >
-                {availableModels.map(m => (
-                  <option key={m.model_id} value={m.model_id}>{m.display_name}</option>
-                ))}
-                {availableModels.length === 0 && <option value="">No models available</option>}
-              </select>
-              <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-            </div>
+            
+            {/* Manual Selection (Dropdown) - only if filters overlap (rare now) */}
+            {availableModels.length > 1 ? (
+              <div className="relative group">
+                <select 
+                  value={selectedModelId} 
+                  onChange={(e) => setSelectedModelId(e.target.value)}
+                  className="w-full bg-slate-900/80 border border-slate-800 text-white rounded-lg px-4 py-3 text-sm outline-none focus:ring-1 focus:ring-indigo-500 appearance-none cursor-pointer"
+                >
+                  {availableModels.map(m => (
+                    <option key={m.model_id} value={m.model_id}>{m.display_name}</option>
+                  ))}
+                </select>
+                <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+              </div>
+            ) : (
+              // Best Model Selected (Automatic/Static)
+              <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-xl px-4 py-3 flex items-center justify-between group">
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-white leading-tight">
+                    {currentModelData?.display_name || "Detecting..."}
+                  </span>
+                </div>
+                <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center border border-indigo-500/20">
+                  <Brain size={16} className="text-indigo-400" />
+                </div>
+              </div>
+            )}
             
             <div className="flex flex-wrap gap-2 mt-4">
               <span className="px-2.5 py-1 rounded text-xs font-bold bg-green-900/20 text-green-400 border border-green-500/20 uppercase">{selectedProvider}</span>
@@ -275,8 +252,7 @@ function App() {
               ))}
             </div>
           </section>
-            </>
-          )}
+
 
           {/* Prompt */}
           <section className="mb-6">
@@ -290,7 +266,13 @@ function App() {
             <textarea 
               value={prompt} 
               onChange={(e) => setPrompt(e.target.value)}
-              className="w-full h-40 bg-[#0f172a] border border-slate-800 p-4 rounded-xl text-sm outline-none focus:border-indigo-500 transition-all resize-none shadow-inner text-slate-200"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleGenerate();
+                }
+              }}
+              className="w-full h-20 bg-[#0f172a] border border-slate-800 p-4 rounded-xl text-sm outline-none focus:border-indigo-500 transition-all resize-none shadow-inner text-slate-200"
             />
           </section>
 
@@ -371,11 +353,6 @@ function App() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-             <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-               <span className="text-xs font-bold text-emerald-400">Live</span>
-             </div>
-             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 border border-indigo-400/30 flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-indigo-500/20">SG</div>
           </div>
         </nav>
 
@@ -391,19 +368,6 @@ function App() {
                       via {recommendedModel.model_id}
                     </span>
                   )}
-                </div>
-                <div className="flex gap-3">
-                  <button className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors"><Paperclip size={16} /></button>
-                  <button 
-                    onClick={() => {
-                      setResponse('');
-                      setMetrics({ input: 0, output: 0, cost: '0.000000', latency: '0ms' });
-                    }} 
-                    className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors text-slate-400"
-                    title="Clear Response"
-                  >
-                    <RotateCcw size={16} />
-                  </button>
                 </div>
               </div>
 
@@ -445,28 +409,28 @@ function App() {
 
               <div className="px-10 py-8 border-t border-slate-800/50 bg-[#1e293b]/40 grid grid-cols-4 gap-8">
                 <div className="space-y-1 group">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                  <p className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-1.5 opacity-90">
                     <span className={`w-1.5 h-1.5 rounded-full ${metrics.latency !== '0ms' ? 'bg-purple-400 animate-pulse' : 'bg-slate-700'}`}></span>
                     Latency
                   </p>
                   <p className={`text-xl font-bold font-mono transition-colors duration-500 ${metrics.latency !== '0ms' ? 'text-purple-300' : 'text-slate-600'}`}>{metrics.latency}</p>
                 </div>
                 <div className="space-y-1 group">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                  <p className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-1.5 opacity-90">
                     <span className={`w-1.5 h-1.5 rounded-full ${metrics.input > 0 ? 'bg-blue-400 animate-pulse' : 'bg-slate-700'}`}></span>
                     Input Tokens
                   </p>
                   <p className={`text-xl font-bold font-mono transition-colors duration-500 ${metrics.input > 0 ? 'text-blue-300' : 'text-slate-600'}`}>{metrics.input}</p>
                 </div>
                 <div className="space-y-1 group">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                  <p className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-1.5 opacity-90">
                     <span className={`w-1.5 h-1.5 rounded-full ${metrics.output > 0 ? 'bg-green-400 animate-pulse' : 'bg-slate-700'}`}></span>
                     Output Tokens
                   </p>
                   <p className={`text-xl font-bold font-mono transition-colors duration-500 ${metrics.output > 0 ? 'text-green-300' : 'text-slate-600'}`}>{metrics.output}</p>
                 </div>
                 <div className="space-y-1 group">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                  <p className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-1.5 opacity-90">
                     <span className={`w-1.5 h-1.5 rounded-full ${metrics.cost > 0 ? 'bg-emerald-400 animate-pulse' : 'bg-slate-700'}`}></span>
                     Est. Cost
                   </p>
@@ -474,13 +438,13 @@ function App() {
                 </div>
               </div>
 
-              <div className="px-10 py-3 bg-[#0f172a] flex justify-between items-center text-xs font-bold text-slate-600 uppercase tracking-tighter">
+              <div className="px-10 py-3 bg-[#0f172a] flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-tighter">
                 <span>Context Window Usage</span>
                 <div className="flex items-center gap-2">
                   <div className="w-32 h-1.5 bg-slate-800 rounded-full overflow-hidden">
                     <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-1000" style={{width: `${Math.min(100, ((metrics.input + metrics.output) / 128000) * 100)}%`}}></div>
                   </div>
-                  <span>{(metrics.input + metrics.output).toLocaleString()} tokens</span>
+                  <span className="text-white opacity-80">{(metrics.input + metrics.output).toLocaleString()} tokens</span>
                 </div>
               </div>
             </div>

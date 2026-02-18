@@ -9,6 +9,7 @@ from app.models.schemas import (
     SaveScoresRequest,
 )
 from app.services.evaluation_service import evaluation_service
+from app.services.supabase_service import supabase_service
 import statistics
 
 router = APIRouter()
@@ -19,11 +20,22 @@ async def run_eval(request: EvalRequest):
     """Run multiple prompts against multiple models."""
     try:
         model_configs = [m.model_dump() for m in request.models]
-        results_raw = await evaluation_service.run_evaluation(
+        judge_cfg = None
+        if request.scoring_type == "AI" and request.judge_model:
+            judge_cfg = {
+                "judge_model": request.judge_model,
+                "judge_provider": request.judge_provider
+            }
+
+        eval_data = await evaluation_service.run_evaluation(
             prompts=request.prompts,
             models=model_configs,
-            criteria=request.criteria
+            criteria=request.criteria,
+            judge_cfg=judge_cfg
         )
+        
+        results_raw = eval_data["results"]
+        prompt_metadata = eval_data["prompt_metadata"]
         
         # Convert to EvalResponseItem
         results = [EvalResponseItem(**r) for r in results_raw]
@@ -46,9 +58,39 @@ async def run_eval(request: EvalRequest):
                 "avg_tokens": round(statistics.mean(stats["tokens"]), 0)
             }
             
-        return EvalResponse(results=results, summary_metrics=summary)
+        # Prepare for Supabase logging
+        import uuid
+        batch_id = str(uuid.uuid4())
+        log_entries = []
+        for r in results_raw:
+            log_entries.append({
+                "batch_id": batch_id,
+                "prompt": r["prompt"],
+                "provider": r["provider"],
+                "model_id": r["model_id"],
+                "response": r["response"],
+                "input_tokens": r["metrics"]["input_tokens"],
+                "output_tokens": r["metrics"]["output_tokens"],
+                "cost": r["metrics"]["cost"],
+                "latency_ms": r["metrics"]["latency_ms"],
+                "scores": r["scores"],
+                "ai_evaluations": r["ai_evaluations"],
+                "prompt_quality": r["prompt_quality"],
+                "criteria": request.criteria
+            })
+        
+        # Log to Supabase
+        supabase_service.log_evaluation(log_entries)
+            
+        return EvalResponse(results=results, summary_metrics=summary, prompt_metadata=prompt_metadata)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/evaluation/history")
+async def get_evaluation_history():
+    """Fetch recent evaluation runs."""
+    return supabase_service.get_evaluations()
 
 
 @router.post("/eval/manual-form", response_model=ManualScoreFormResponse)

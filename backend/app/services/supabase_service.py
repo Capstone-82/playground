@@ -39,6 +39,29 @@ class SupabaseService:
             "data": data,
         }
 
+    def log_evaluation(self, data: list):
+        """Insert evaluation results into the database."""
+        try:
+            return self.client.table("evaluations").insert(data).execute()
+        except Exception as e:
+            print(f"Supabase evaluation logging error: {e}")
+            return None
+
+    def get_evaluations(self, limit: int = 100):
+        """Fetch evaluation history."""
+        try:
+            result = (
+                self.client.table("evaluations")
+                .select("*")
+                .order("created_at", desc=True)
+                .limit(limit)
+                .execute()
+            )
+            return result.data or []
+        except Exception as e:
+            print(f"Supabase fetch evaluations error: {e}")
+            return []
+
 
 # Singleton instance
 supabase_service = SupabaseService()

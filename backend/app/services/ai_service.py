@@ -20,8 +20,9 @@ class AIService:
     """Unified AI service that routes requests to the correct provider SDK."""
 
     def __init__(self):
-        # Original Google Gemini client (Google AI SDK)
+        # Google Gemini client via Vertex AI
         self._vertex_genai_client = genai.Client(
+            vertexai=True,
             api_key=settings.GOOGLE_API_KEY,
         )
 

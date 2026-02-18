@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { 
   X, Play, Search, Trash2, ChevronDown, ChevronRight, 
   Settings2, User, Bot, Star, Info, Download, Upload, AlertCircle, Clock, Coins, Sparkles, Plus, Wand2, Save, MessageSquare
@@ -48,6 +48,104 @@ function EvaluationEngine({ onBack }) {
   const [savedScores, setSavedScores] = useState({}); // key: "prompt:model_id" → avg score
   const [judgeModel, setJudgeModel] = useState({ provider: 'Google', model_id: 'gemini-2.5-flash', display_name: 'Gemini 2.5 Flash' });
   const [showJudgeDropdown, setShowJudgeDropdown] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [selectedBatchId, setSelectedBatchId] = useState(null);
+
+  // Fetch History on mount
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/evaluation/history`);
+      if (!res.ok) throw new Error('Failed to fetch history');
+      const data = await res.json();
+      setHistory(data);
+      
+      // If we have history, group it and show the latest batch
+      if (data.length > 0) {
+        const latestBatchId = data[0].batch_id;
+        loadBatch(latestBatchId, data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const loadBatch = (batchId, allHistory = history) => {
+    const batchResults = allHistory.filter(h => h.batch_id === batchId);
+    if (batchResults.length === 0) return;
+
+    setSelectedBatchId(batchId);
+    
+    // Reconstruct the 'results' structure used by the table
+    const formattedResults = {
+      results: batchResults.map(r => ({
+        prompt: r.prompt,
+        provider: r.provider,
+        model_id: r.model_id,
+        response: r.response,
+        metrics: {
+          input_tokens: r.input_tokens,
+          output_tokens: r.output_tokens,
+          cost: r.cost,
+          latency_ms: r.latency_ms
+        },
+        scores: r.scores,
+        ai_evaluations: r.ai_evaluations,
+        prompt_quality: r.prompt_quality
+      })),
+      summary_metrics: {}, // Backend calculates this, but we can't easily from history without more logic
+      prompt_metadata: {}
+    };
+
+    // Reconstruct prompt metadata and summary metrics
+    const stats = {};
+    batchResults.forEach(r => {
+      formattedResults.prompt_metadata[r.prompt] = r.prompt_quality;
+      const key = `${r.provider}:${r.model_id}`;
+      if (!stats[key]) {
+        stats[key] = { latencies: [], costs: [] };
+      }
+      stats[key].latencies.push(r.latency_ms);
+      stats[key].costs.push(r.cost);
+    });
+
+    // Calculate actual averages
+    Object.keys(stats).forEach(key => {
+      const latencies = stats[key].latencies;
+      const costs = stats[key].costs;
+      formattedResults.summary_metrics[key] = {
+        avg_latency: Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length),
+        avg_cost: costs.reduce((a, b) => a + b, 0) / costs.length
+      };
+    });
+
+    setResults(formattedResults);
+    
+    // Update local scoring state too
+    const newManualScores = {};
+    const newAiScores = {};
+    batchResults.forEach(r => {
+      const key = `${r.prompt}::${r.model_id}`;
+      newManualScores[key] = r.scores;
+      newAiScores[key] = r.ai_evaluations;
+    });
+    setManualScores(newManualScores);
+    setAiScores(newAiScores);
+    
+    // Update prompts and models used in that batch
+    const uniquePrompts = [...new Set(batchResults.map(r => r.prompt))];
+    const uniqueModels = batchResults.reduce((acc, r) => {
+      if (!acc.find(m => m.model_id === r.model_id)) {
+        acc.push({ provider: r.provider, model_id: r.model_id, display_name: r.model_id });
+      }
+      return acc;
+    }, []);
+    setPrompts(uniquePrompts);
+    setEvalModels(uniqueModels);
+  };
 
   const groupedModels = getModelsByProvider();
 
@@ -102,7 +200,14 @@ function EvaluationEngine({ onBack }) {
       const res = await fetch(`${API_BASE}/eval/run`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompts: filteredPrompts, models: evalModels, criteria })
+        body: JSON.stringify({ 
+          prompts: filteredPrompts, 
+          models: evalModels, 
+          criteria,
+          scoring_type: scoringType,
+          judge_model: scoringType === 'AI' ? judgeModel.model_id : null,
+          judge_provider: scoringType === 'AI' ? judgeModel.provider : null
+        })
       });
       if (!res.ok) {
         const errorData = await res.json();
@@ -110,6 +215,24 @@ function EvaluationEngine({ onBack }) {
       }
       const data = await res.json();
       setResults(data);
+
+      // Auto-populate scores if returned (for AI Scoring mode)
+      const newManualScores = {};
+      const newAiScores = {};
+      data.results.forEach(resp => {
+        const key = getModalKey(resp);
+        if (resp.scores) {
+          newManualScores[key] = resp.scores;
+        }
+        if (resp.ai_evaluations) {
+          newAiScores[key] = resp.ai_evaluations;
+        }
+      });
+      setManualScores(prev => ({ ...prev, ...newManualScores }));
+      setAiScores(prev => ({ ...prev, ...newAiScores }));
+      
+      // Update history list
+      fetchHistory();
     } catch (err) {
       console.error(err);
       setError(err.message);
@@ -234,11 +357,48 @@ function EvaluationEngine({ onBack }) {
       
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-white tracking-tight">Gen AI Evaluation Engine</h1>
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold text-white tracking-tight">Gen AI Evaluation Engine</h1>
+          <p className="text-xs text-slate-500 font-medium">Benchmark model quality, speed, and cost across batch prompts</p>
+        </div>
         <div className="flex gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-bold hover:bg-slate-700 transition-colors text-slate-300">
-            <Upload size={14} /> Import CSV
-          </button>
+          {history.length > 0 && (
+            <div className="relative group">
+              <button 
+                className="flex items-center gap-2 px-4 py-2 bg-[#0f172a] border border-slate-700 rounded-lg text-xs font-bold hover:bg-slate-800 transition-colors text-indigo-400"
+                onClick={() => setShowPresetDropdown(!showPresetDropdown)} // Reusing dropdown state for simplicity or adding new one
+              >
+                <Clock size={14} /> View History ({[...new Set(history.map(h => h.batch_id))].length})
+              </button>
+              
+              {/* History Dropdown */}
+              <div className="absolute right-0 top-full mt-2 w-[300px] bg-[#0f172a] border border-slate-700 rounded-xl shadow-2xl z-50 hidden group-hover:block animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="p-3 border-b border-slate-800 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Recent Evaluations</div>
+                <div className="max-h-[300px] overflow-y-auto">
+                  {[...new Set(history.map(h => h.batch_id))].map(batchId => {
+                    const firstItem = history.find(h => h.batch_id === batchId);
+                    return (
+                      <button 
+                        key={batchId}
+                        onClick={() => loadBatch(batchId)}
+                        className={`w-full text-left px-4 py-3 hover:bg-slate-800/50 transition-all border-b border-slate-800/50 last:border-0 ${selectedBatchId === batchId ? 'bg-indigo-500/5 border-l-2 border-indigo-500' : 'border-l-2 border-transparent'}`}
+                      >
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs font-bold text-slate-300 truncate">{firstItem.prompt}</span>
+                          <div className="flex justify-between items-center">
+                            <span className="text-[10px] text-slate-500">{new Date(firstItem.created_at).toLocaleString()}</span>
+                            <span className="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/10">
+                              {history.filter(h => h.batch_id === batchId).length} Results
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
           <button className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-bold hover:bg-slate-700 transition-colors text-slate-300">
             <Download size={14} /> Export CSV
           </button>
@@ -459,15 +619,39 @@ function EvaluationEngine({ onBack }) {
                 {/* AI will score these metrics */}
                 <div>
                   <label className="text-xs font-bold text-slate-600 uppercase tracking-widest mb-2 block">Metrics the AI will evaluate</label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <span className="px-3 py-1.5 bg-indigo-500/20 border border-indigo-500/40 text-indigo-200 text-xs font-bold rounded-full flex items-center gap-1.5">
+                      <Sparkles size={12} className="text-indigo-400" /> Prompt Quality (Mandatory)
+                    </span>
                     {criteria.map(tag => (
-                      <span key={tag} className="px-3 py-1.5 bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-bold rounded-full flex items-center gap-1.5">
-                        <Sparkles size={12} /> {tag}
+                      <span key={tag} className="px-3 py-1.5 bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-bold rounded-full flex items-center gap-1.5 group cursor-pointer hover:bg-red-500/10 hover:border-red-500/30 transition-colors"
+                        onClick={() => removeCriterion(tag)}
+                      >
+                        <Sparkles size={12} /> {tag} <X size={10} className="ml-1 opacity-0 group-hover:opacity-100 text-red-400" />
                       </span>
                     ))}
-                    {criteria.length === 0 && (
-                      <span className="text-xs text-slate-600 italic">Switch to Manual to configure metrics first</span>
-                    )}
+                  </div>
+
+                  {/* Common Metrics Selection */}
+                  <label className="text-[10px] font-bold text-slate-700 uppercase tracking-[0.2em] mb-2 block">Available Metrics</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {['Correctness', 'Relevance', 'Clarity', 'Completeness', 'Safety', 'Tone', 'Compliance', 'Security', 'Efficiency'].map(m => {
+                      const isSelected = criteria.includes(m);
+                      return (
+                        <button
+                          key={m}
+                          onClick={() => isSelected ? removeCriterion(m) : setCriteria([...criteria, m])}
+                          className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all border ${
+                            isSelected 
+                              ? 'bg-purple-600 text-white border-transparent shadow-lg shadow-purple-600/20' 
+                              : 'bg-[#0f172a] text-slate-500 border-slate-800 hover:border-slate-700 hover:text-slate-300'
+                          }`}
+                        >
+                          {isSelected ? <Plus size={10} className="rotate-45 inline mr-1" /> : <Plus size={10} className="inline mr-1" />}
+                          {m}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -640,8 +824,35 @@ function EvaluationEngine({ onBack }) {
                 return acc;
               }, []).map((row, i) => (
                 <tr key={i} className="border-b border-slate-800/30 hover:bg-white/[0.02] transition-colors group">
-                  <td className="px-6 py-6 text-sm text-slate-400 leading-relaxed font-medium align-top">
-                    {row.prompt}
+                  <td className="px-6 py-8 text-sm text-slate-400 leading-relaxed font-medium align-top">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-slate-300 font-bold">Prompt</span>
+                        <span>{row.prompt}</span>
+                      </div>
+                      
+                      {results?.prompt_metadata?.[row.prompt] && (
+                        <div className="bg-[#0f172a] border border-slate-800 p-4 rounded-xl flex flex-col gap-2.5 shadow-inner">
+                          <div className="flex justify-between items-center">
+                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Prompt Accuracy</span>
+                            <span className={`text-sm font-mono font-bold ${
+                              results.prompt_metadata[row.prompt].score >= 4 ? 'text-green-400' : 
+                              results.prompt_metadata[row.prompt].score >= 3 ? 'text-yellow-400' : 'text-red-400'
+                            }`}>
+                              {results.prompt_metadata[row.prompt].score}/5
+                            </span>
+                          </div>
+                          <div className="h-px bg-slate-800/50 w-full" />
+                          <div className="flex flex-col gap-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[9px] font-bold text-slate-600 bg-slate-800/50 px-1.5 py-0.5 rounded uppercase">Intent</span>
+                              <p className="text-[11px] text-slate-400 font-medium italic">"{results.prompt_metadata[row.prompt].intent_detected}"</p>
+                            </div>
+                            <p className="text-xs text-slate-500 leading-relaxed">{results.prompt_metadata[row.prompt].summary}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </td>
                   {row.responses.map((resp, j) => {
                     const avg = getAvgScore(resp);
@@ -740,6 +951,26 @@ function EvaluationEngine({ onBack }) {
                 </div>
               </section>
 
+               {/* Prompt Quality Analysis (Mandatory) */}
+               {activeModal.prompt_quality && (
+                <section className="bg-indigo-500/5 border border-indigo-500/20 p-6 rounded-2xl animate-in slide-in-from-top-2 duration-300">
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="flex items-center gap-2">
+                      <Wand2 size={16} className="text-indigo-400" />
+                      <label className="text-xs font-bold text-white uppercase tracking-widest">Prompt Quality (AI Analysis)</label>
+                    </div>
+                    <span className={`text-base font-mono font-bold ${
+                      activeModal.prompt_quality.score >= 4 ? 'text-green-400' : activeModal.prompt_quality.score >= 3 ? 'text-yellow-400' : 'text-red-400'
+                    }`}>
+                      {activeModal.prompt_quality.score}/5
+                    </span>
+                  </div>
+                  <div className="bg-[#0f172a] border border-slate-800 p-4 rounded-xl text-xs text-slate-300 leading-relaxed italic">
+                    {activeModal.prompt_quality.summary}
+                  </div>
+                </section>
+               )}
+
               <section>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 block">Model Response ({activeModal.model_id})</label>
                 <div className="bg-slate-900/50 border border-slate-800 p-4 rounded-xl text-sm text-slate-300 leading-relaxed font-mono max-h-[200px] overflow-y-auto">
@@ -747,17 +978,7 @@ function EvaluationEngine({ onBack }) {
                 </div>
               </section>
 
-              {/* AI Score Button */}
-              {scoringType === 'AI' && (
-                <button
-                  onClick={() => handleRunAiScore(activeModal)}
-                  disabled={isAiScoring}
-                  className="w-full py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:from-slate-800 disabled:to-slate-800 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-lg"
-                >
-                  {isAiScoring ? <Sparkles size={16} className="animate-spin" /> : <Wand2 size={16} />}
-                  {isAiScoring ? 'AI Judge is evaluating...' : `Run AI Judge (${judgeModel.display_name})`}
-                </button>
-              )}
+
 
               {/* Scoring Section */}
               <section className="bg-indigo-500/5 border border-indigo-500/10 p-6 rounded-2xl space-y-6">
@@ -819,17 +1040,7 @@ function EvaluationEngine({ onBack }) {
                         </div>
                       )}
 
-                      {/* Comment Field */}
-                      <div className="relative">
-                        <MessageSquare size={12} className="absolute left-3 top-3.5 text-slate-600" />
-                        <input
-                          type="text"
-                          value={comment}
-                          onChange={(e) => updateManualComment(c, e.target.value)}
-                          placeholder="Add comment..."
-                          className="w-full bg-slate-900/50 border border-slate-800/50 text-slate-400 rounded-lg pl-9 pr-4 py-2.5 text-xs outline-none focus:border-indigo-500/50 transition-all"
-                        />
-                      </div>
+
                     </div>
                   );
                 })}

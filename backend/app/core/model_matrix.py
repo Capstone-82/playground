@@ -303,36 +303,73 @@ MODEL_REGISTRY = [
     },
 ]
 
-# Build legacy lookups for backward compatibility with existing chat endpoint
+# ── Capability Keys ────────────────────────────────────────
 CAPABILITY_KEYS = [
-    "reasoning", "coding", "tool_calling", "summarization", "structured_output",
-    "rag", "vision", "multimodality",
+    "reasoning", "tool calling", "summarization", "structured output",
+    "rag", "vision", "multimodality"
 ]
 
-# Legacy MODEL_MATRIX for backward compat with chat endpoint
-MODEL_MATRIX = {}
-for entry in MODEL_REGISTRY:
-    prov = entry["provider"]
-    if prov not in MODEL_MATRIX:
-        MODEL_MATRIX[prov] = {}
-    for cap in CAPABILITY_KEYS:
-        if entry.get(cap, False):
-            # Map internal capabilities to public use cases for the API
-            use_case_map = {
-                "reasoning": "Chat",
-                "coding": "Code",
-                "vision": "Vision",
-                "rag": "RAG",
-                "summarization": "Summarization",
-                "tool_calling": "Tool Calling",
-                "structured_output": "Structured Output"
-            }
-            use_case = use_case_map.get(cap, cap.replace("_", " "))
-            
-            # Only store first (highest quality) model per provider+capability
-            if use_case not in MODEL_MATRIX[prov]:
-                MODEL_MATRIX[prov][use_case] = entry["model_id"]
 
+# ── Model Matrix ──────────────────────────────────────────
+# Maps (provider, use_case) → model_id
+# Mirrors the frontend data.js but only for supported backend providers.
+
+MODEL_MATRIX = {
+    "Google": {
+        "reasoning": "gemini-2.5-pro",
+        "tool calling": "gemini-2.5-flash",
+        "summarization": "gemini-2.5-flash-lite",
+        "structured output": "gemini-2.5-pro",
+        "rag": "gemini-2.5-pro",
+        "vision": "gemini-2.5-pro",
+        "multimodality": "gemini-2.5-pro",
+    },
+    "OpenAI": {
+        "reasoning": "gpt-4o",
+        "tool calling": "gpt-4o",
+        "summarization": "gpt-4o-mini",
+        "structured output": "gpt-4o",
+        "rag": "gpt-4o-mini",
+        "vision": "gpt-4o",
+        "multimodality": "gpt-4o",
+    },
+    "Meta": {
+        "reasoning": "meta/llama-3.3-70b-instruct-maas",
+        "tool calling": "meta/llama-3.3-70b-instruct-maas",
+        "summarization": "meta/llama-3.3-70b-instruct-maas",
+        "structured output": "meta/llama-3.3-70b-instruct-maas",
+        "rag": "meta/llama-3.3-70b-instruct-maas",
+        "vision": "meta/llama-4-scout-17b-16e-instruct-maas",
+        "multimodality": "meta/llama-4-scout-17b-16e-instruct-maas",
+    },
+    "Mistral AI": {
+        "reasoning": "mistral.mistral-large-2402-v1:0",
+        "tool calling": "mistral.mistral-small-2402-v1:0",
+        "summarization": "mistral.mistral-small-2402-v1:0",
+        "structured output": "mistral.mistral-large-2402-v1:0",
+        "rag": "mistral.mistral-large-2402-v1:0",
+        "vision": "us.mistral.pixtral-large-2502-v1:0",
+        "multimodality": "us.mistral.pixtral-large-2502-v1:0",
+    },
+    "Amazon": {
+        "reasoning": "amazon.nova-pro-v1:0",
+        "tool calling": "amazon.nova-pro-v1:0",
+        "summarization": "amazon.nova-lite-v1:0",
+        "structured output": "amazon.nova-pro-v1:0",
+        "rag": "amazon.nova-lite-v1:0",
+        "vision": "amazon.nova-pro-v1:0",
+        "multimodality": "amazon.nova-pro-v1:0",
+    },
+    "DeepSeek": {
+        "reasoning": "deepseek-ai/deepseek-r1-0528-maas",
+        "tool calling": "deepseek-ai/deepseek-v3.2-maas",
+        "summarization": "deepseek-ai/deepseek-v3.2-maas",
+        "structured output": "deepseek-ai/deepseek-v3.2-maas",
+        "rag": "deepseek-ai/deepseek-v3.2-maas",
+        "vision": "deepseek-ai/deepseek-v3.2-maas",
+        "multimodality": "deepseek-ai/deepseek-v3.2-maas",
+    },
+}
 
 # DeepSeek models need specific regions
 MODEL_REGION_MAP = {
@@ -346,9 +383,11 @@ def get_model_id(provider: str, use_case: str) -> str:
     provider_models = MODEL_MATRIX.get(provider)
     if not provider_models:
         raise ValueError(f"Unsupported provider: {provider}")
+
     model_id = provider_models.get(use_case)
     if not model_id:
         raise ValueError(f"Unsupported use case '{use_case}' for provider '{provider}'")
+
     return model_id
 
 
@@ -372,7 +411,6 @@ def get_models_by_tags(tags: list[str]) -> list[dict]:
     """Return all models that support ALL the given capability tags."""
     results = []
     for model in MODEL_REGISTRY:
-        # Convert tag names to registry keys (e.g., "tool_calling" stays, etc.)
         if all(model.get(tag, False) for tag in tags):
             results.append(model)
     return results
@@ -381,26 +419,10 @@ def get_models_by_tags(tags: list[str]) -> list[dict]:
 def recommend_model(tags: list[str]) -> dict | None:
     """
     Pick the best model for a set of workload tags.
-    Ranking: quality_score DESC → latency ASC → cost_per_1k ASC.
-    Avoids reasoning-grade models for summarization-only workloads.
     """
     candidates = get_models_by_tags(tags)
     if not candidates:
         return None
 
-    # If only summarization is requested, prefer non-reasoning models
-    is_summarization_only = tags == ["summarization"]
-
-    def sort_key(m):
-        # Penalize reasoning models for summarization-only workloads
-        quality_penalty = 0
-        if is_summarization_only and m.get("reasoning") and m["quality_score"] >= 4:
-            quality_penalty = 1  # Drop quality score by 1 for ranking
-        return (
-            -(m["quality_score"] - quality_penalty),  # Higher is better
-            m["latency"],       # Lower is better
-            m["cost_per_1k"],   # Lower is better
-        )
-
-    candidates.sort(key=sort_key)
+    candidates.sort(key=lambda m: (-m["quality_score"], m["latency"], m["cost_per_1k"]))
     return candidates[0]
